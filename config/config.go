@@ -4,8 +4,8 @@ import (
    "encoding/json"
    "github.com/aws/aws-sdk-go/aws/session"
    "github.com/aws/aws-sdk-go/service/cloudformation"
+   "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/logging"
    log "github.com/sirupsen/logrus"
-   "newrelic-cloudformation-common/pkg/logging"
    "os"
    "strings"
 )
