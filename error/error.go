@@ -1,4 +1,4 @@
-package errors
+package error
 
 import (
    "github.com/aws/aws-sdk-go/service/cloudformation"
