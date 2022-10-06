@@ -1,4 +1,4 @@
-module newrelic-cloudformation-common
+module newrelic-cloudformation-resource-providers-common
 
 go 1.19
 
