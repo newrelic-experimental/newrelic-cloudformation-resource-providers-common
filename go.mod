@@ -1,5 +1,4 @@
-//module github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common
-module newrelic-cloudformation-resource-providers-common
+module github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common
 
 go 1.19
 
