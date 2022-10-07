@@ -1,4 +1,4 @@
-package config
+package configuration
 
 import (
    "encoding/json"
@@ -12,8 +12,7 @@ import (
 
 var usEndpoint = "https://api.newrelic.com/graphql"
 
-// TODO is there a way to get my TypeName?
-var typeName = "NewRelic::CloudFormation::Workloads"
+// TODO try reading typeName from .rpdk-configuration
 var resourceType = cloudformation.RegistryTypeResource
 var mockConfig = `{  "APIKey": "mockapikey",  "AccountID": "987654321",  "Endpoint": "https://api.newrelic.com/snafu"}`
 
@@ -30,9 +29,10 @@ func (c *Config) GetEndpoint() string {
    return *c.Endpoint
 }
 
-func (c *Config) SetConfiguration(s *session.Session) {
+func NewConfiguration(s *session.Session, typeName *string) (c *Config) {
    // 1. If we find a TypeConfiguration use it and return
-   if c.configurationFromCloudFormation(s) {
+   c = &Config{}
+   if c.configurationFromCloudFormation(s, typeName) {
       log.Debugf("SetConfiguration: using CloudFormation")
       return
    }
@@ -44,7 +44,7 @@ func (c *Config) SetConfiguration(s *session.Session) {
    // 3. If we find nothing use the mock type configuration
    log.Debugf("SetConfiguration: using mock")
    c.setConfiguration(&mockConfig)
-
+   return
 }
 
 func (c *Config) setConfiguration(jsonConfig *string) {
@@ -98,14 +98,14 @@ func (c *Config) configurationFromFile() bool {
    return true
 }
 
-func (c *Config) configurationFromCloudFormation(s *session.Session) bool {
+func (c *Config) configurationFromCloudFormation(s *session.Session, typeName *string) bool {
    // Create a CloudFormation client from just a session.
    svc := cloudformation.New(s)
    bdtci := cloudformation.BatchDescribeTypeConfigurationsInput{}
    tcia := []*cloudformation.TypeConfigurationIdentifier{
       {
          Type:     &resourceType,
-         TypeName: &typeName,
+         TypeName: typeName,
       },
    }
    bdtci.SetTypeConfigurationIdentifiers(tcia)
