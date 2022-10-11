@@ -1,10 +1,10 @@
 package nerdgraph
 
 import (
-   "encoding/json"
    "fmt"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/cferror"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/model"
+   log "github.com/sirupsen/logrus"
 )
 
 type readResponse struct {
@@ -21,45 +21,42 @@ type readEntity struct {
    Name string `json:"name"`
 }
 
-func (i *nerdgraph) Read(m model.Model) error {
-   if m.GetGuid() == nil {
-      return fmt.Errorf("%w %s", &cferror.NotFound{}, "missing guid")
-   }
-   if i.config.APIKey == nil {
-      return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, "missing APIKey")
-   }
+func (i *nerdgraph) Read(m model.Model) (err error) {
+   variables := m.GetVariables()
+   i.config.InjectIntoMap(&variables)
+   mutation := m.GetReadQuery()
 
-   mutation, err := model.Render(readQuery, map[string]string{"GUID": *m.GetGuid()})
+   // Render the mutation
+   mutation, err = model.Render(mutation, variables)
    if err != nil {
+      log.Errorf("Read: %v", err)
+      return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, err.Error())
+   }
+   log.Debugln("Read: rendered mutation: ", mutation)
+   log.Debugln("")
+
+   // Validate mutation
+   err = model.Validate(&mutation)
+   if err != nil {
+      log.Errorf("Read: %v", err)
       return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, err.Error())
    }
 
    body, err := i.emit(mutation, *i.config.APIKey, i.config.GetEndpoint())
    if err != nil {
-      return err
+      return
    }
 
-   response := readResponse{}
-   err = json.Unmarshal(body, &response)
+   v, err := findKeyValue(body, m.GetGuidKey())
    if err != nil {
-      return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, err.Error())
+      log.Errorf("error finding guid: %s in response: %s", m.GetGuidKey(), string(body))
+      return
    }
 
-   // An entity query returns no errors so nothing to check
-   if response.Data.Actor.Entity == nil {
-      return fmt.Errorf("%w %s", &cferror.NotFound{}, "guid not found")
+   if v == nil {
+      log.Errorf("Read: guid not returned by NerdGraph operation")
+      err = fmt.Errorf("%w Read: guid not returned by NerdGraph operation", &cferror.InvalidRequest{})
+      return
    }
-
-   return nil
+   return
 }
-
-const readQuery = `
-{
-  actor {
-    entity(guid: "{{{GUID}}}") {
-        guid
-        name
-    }
-  }
-}
-`

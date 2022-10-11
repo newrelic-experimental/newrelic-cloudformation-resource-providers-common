@@ -22,7 +22,7 @@ type IClient interface {
    Delete(model model.Model) error
    Update(m model.Model) error
    Read(m model.Model) error
-   List(m model.Model) ([]interface{}, error)
+   List(m model.Model) error
 }
 
 type GraphqlClient struct {
@@ -116,7 +116,7 @@ func (i *GraphqlClient) ReadQuery(model model.Model) (event handler.ProgressEven
 }
 
 func (i *GraphqlClient) ListQuery(model model.Model) (event handler.ProgressEvent, err error) {
-   _, err = i.client.List(model)
+   err = i.client.List(model)
    if err == nil {
       event = handler.ProgressEvent{
          OperationStatus: handler.Success,

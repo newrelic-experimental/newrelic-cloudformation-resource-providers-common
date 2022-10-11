@@ -12,7 +12,6 @@ import (
 
 var usEndpoint = "https://api.newrelic.com/graphql"
 
-// TODO try reading typeName from .rpdk-configuration
 var resourceType = cloudformation.RegistryTypeResource
 var mockConfig = `{  "APIKey": "mockapikey",  "AccountID": "987654321",  "Endpoint": "https://api.newrelic.com/snafu"}`
 
@@ -29,25 +28,34 @@ func (c *Config) GetEndpoint() string {
    return *c.Endpoint
 }
 
-func NewConfiguration(s *session.Session, typeName *string) (c *Config) {
-   // 1. If we find a TypeConfiguration use it and return
-   c = &Config{}
-   if c.configurationFromCloudFormation(s, typeName) {
-      log.Debugf("SetConfiguration: using CloudFormation")
-      return
-   }
+// FUTURE try reading typeName from .rpdk-configuration. For now it's up to the API implementor to provide it.
+
+func NewConfiguration(s *session.Session, typeName *string) *Config {
    // 2. If we find a TypeConfiguration envvar AND the file exists use it and return
+   c := &Config{}
    if c.configurationFromFile() {
       log.Debugf("SetConfiguration: using file")
-      return
+      return c
+   }
+   // 1. If we find a TypeConfiguration use it and return
+   if c.configurationFromCloudFormation(s, typeName) {
+      log.Debugf("SetConfiguration: using CloudFormation")
+      return c
    }
    // 3. If we find nothing use the mock type configuration
    log.Debugf("SetConfiguration: using mock")
    c.setConfiguration(&mockConfig)
-   return
+   return c
+}
+
+func (c *Config) InjectIntoMap(m *map[string]string) {
+   (*m)["ENDPOINT"] = *c.Endpoint
+   (*m)["ACCOUNTID"] = *c.AccountID
+   (*m)["APIKEY"] = *c.APIKey
 }
 
 func (c *Config) setConfiguration(jsonConfig *string) {
+   log.Debugf("setConfiguration: enter: c: %+v jsonConfig: %+v", c, *jsonConfig)
    tc := Config{}
    err := json.Unmarshal([]byte(*jsonConfig), &tc)
    if err != nil {
@@ -57,6 +65,7 @@ func (c *Config) setConfiguration(jsonConfig *string) {
    if tc.APIKey == nil {
       panic("nil APIKey, typeOutput: " + *jsonConfig)
    } else {
+      log.Debugf("setConfiguration: c: %+v tc: %+v", c, tc)
       c.APIKey = tc.APIKey
    }
 

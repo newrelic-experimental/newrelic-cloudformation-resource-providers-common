@@ -9,14 +9,12 @@ import (
    log "github.com/sirupsen/logrus"
 )
 
-// TODO Fix logging
-
 func Validate(mutation *string) (err error) {
-   // Parse the GetGraphQL so we can test for multiple
+   // Parse the GetGraphQLFragment so we can test for multiple
    doc, err := parser.Parse(parser.ParseParams{
       Source: &source.Source{
          Body: []byte(*mutation),
-         Name: "GetGraphQL",
+         Name: "GetGraphQLFragment",
       },
    })
    if err != nil {
