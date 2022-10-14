@@ -21,6 +21,10 @@ func findAllKeyValues(data []byte, key string) (values []interface{}, err error)
    }
    values = make([]interface{}, 0)
    _findAllKeyValues(m, key, &values)
+   if len(values) <= 0 {
+      err = fmt.Errorf("%w key not found: %s", &cferror.NotFound{}, key)
+   }
+
    return
 }
 
@@ -34,7 +38,7 @@ func findKeyValue(data []byte, key string) (value interface{}, err error) {
       return
    }
    if len(v) <= 0 {
-      err = fmt.Errorf("%w key not found: %s", cferror.NotFound{}, key)
+      err = fmt.Errorf("%w key not found: %s", &cferror.NotFound{}, key)
       return
    }
    value = v[0]
@@ -43,7 +47,7 @@ func findKeyValue(data []byte, key string) (value interface{}, err error) {
 
 func _findAllKeyValues(m map[string]interface{}, key string, values *[]interface{}) {
    for k, v := range m {
-      log.Debugf("_findAllKeyValues: key: %s value: %v type: %T", k, v, v)
+      log.Tracef("_findAllKeyValues: k(ey): %s v(alue): %v type: %T", k, v, v)
       if k == key {
          *values = append(*values, v)
          return
@@ -51,6 +55,14 @@ func _findAllKeyValues(m map[string]interface{}, key string, values *[]interface
       switch v.(type) {
       case map[string]interface{}:
          _findAllKeyValues(v.(map[string]interface{}), key, values)
+      case []interface{}:
+         for _, e := range v.([]interface{}) {
+            if m, ok := e.(map[string]interface{}); ok {
+               _findAllKeyValues(m, key, values)
+            } else {
+               log.Warnf("_findAllKeyValues: skipping [] of unknown type: %T at key: %s", e, k)
+            }
+         }
       default:
       }
    }

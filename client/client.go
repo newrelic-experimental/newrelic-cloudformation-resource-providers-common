@@ -31,10 +31,10 @@ type GraphqlClient struct {
 
 var graphqlClient *GraphqlClient
 
-func NewGraphqlClient(sess *session.Session, typeName *string) *GraphqlClient {
+func NewGraphqlClient(sess *session.Session, typeName *string, model model.Model) *GraphqlClient {
    if graphqlClient == nil {
       graphqlClient = &GraphqlClient{
-         client: nerdgraph.NewClient(configuration.NewConfiguration(sess, typeName)),
+         client: nerdgraph.NewClient(configuration.NewConfiguration(sess, typeName), model),
       }
       log.Debugln("NewGraphqlClient: returning NerdGraph client")
    }

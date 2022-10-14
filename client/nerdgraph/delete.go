@@ -36,18 +36,21 @@ func (i *nerdgraph) Delete(m model.Model) (err error) {
       return
    }
 
-   // v, err := findKeyValue(body, m.GetGuidKey())
-   // if err != nil {
-   //    log.Errorf("error finding guid: %s in response: %s", m.GetGuidKey(), string(body))
-   //    return
-   // }
+   key := m.GetResultKey(model.Delete)
+   if key != "" {
+      var v interface{}
+      v, err = findKeyValue(body, key)
+      if err != nil {
+         log.Errorf("error finding result key: %s in response: %s", key, string(body))
+         return
+      }
 
-   // if v == nil {
-   //    log.Errorf("Delete: guid not returned by NerdGraph operation")
-   //    err = fmt.Errorf("%w Delete: guid not returned by NerdGraph operation", &cferror.InvalidRequest{})
-   //    return
-   // }
-
+      if v == nil {
+         log.Errorf("Delete: result not returned by NerdGraph operation")
+         err = fmt.Errorf("%w Delete: result not returned by NerdGraph operation", &cferror.InvalidRequest{})
+         return
+      }
+   }
    // Allow for the NRDB propagation delay by doing a spin Read
    // FUTURE add some sort of timeout interrupt (channel?)
    // Call Read until it returns Not Found

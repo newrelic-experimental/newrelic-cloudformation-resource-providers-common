@@ -43,12 +43,20 @@ func (i *nerdgraph) List(m model.Model) (err error) {
       return
    }
 
-   guids, err := findAllKeyValues(body, m.GetGuidKey())
-   if err != nil {
-      return
-   }
-   for _, g := range guids {
-      m.AppendToResourceModels(m.NewModelFromGuid(g))
+   key := m.GetResultKey(model.List)
+   if key != "" {
+      var guids []interface{}
+      guids, err = findAllKeyValues(body, key)
+      if err != nil {
+         return
+      }
+
+      log.Debugf("List: guids: %+v", guids)
+      for _, g := range guids {
+         m.AppendToResourceModels(m.NewModelFromGuid(g))
+      }
+   } else {
+      log.Errorf("No result expected for List, this is probably an error")
    }
 
    // TODO process cursor

@@ -6,16 +6,18 @@ import (
    "github.com/go-resty/resty/v2"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/configuration"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/logging"
+   "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/model"
    log "github.com/sirupsen/logrus"
 )
 
 type nerdgraph struct {
    client *resty.Client
    config *configuration.Config
+   model  model.Model
 }
 
-func NewClient(config *configuration.Config) *nerdgraph {
-   return &nerdgraph{client: resty.New(), config: config}
+func NewClient(config *configuration.Config, model model.Model) *nerdgraph {
+   return &nerdgraph{client: resty.New(), config: config, model: model}
 }
 
 func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBody []byte, err error) {
@@ -56,6 +58,6 @@ func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBo
    respBody = resp.Body()
    logging.Dump(log.DebugLevel, string(respBody), "emit: response: ")
 
-   err = hasErrors(&respBody)
+   err = i.hasErrors(&respBody)
    return
 }

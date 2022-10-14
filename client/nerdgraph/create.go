@@ -35,13 +35,17 @@ func (i *nerdgraph) Create(m model.Model) (err error) {
       return err
    }
 
-   v, err := findKeyValue(body, m.GetGuidKey())
-   if err != nil {
-      log.Errorf("Create: error finding guid: %s in response: %s", m.GetGuidKey(), string(body))
-      return err
+   key := m.GetResultKey(model.Create)
+   if key != "" {
+      var v interface{}
+      v, err = findKeyValue(body, key)
+      if err != nil {
+         log.Errorf("Create: error finding result key: %s in response: %s", key, string(body))
+         return err
+      }
+      s := fmt.Sprintf("%v", v)
+      m.SetGuid(&s)
    }
-   s := fmt.Sprintf("%v", v)
-   m.SetGuid(&s)
 
    // Allow for the NRDB propagation delay by doing a spin Read
    // FUTURE add some sort of timeout interrupt (channel?)

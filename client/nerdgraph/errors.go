@@ -25,9 +25,10 @@ type extensions struct {
    ErrorClass string `json:"errorClass"`
    ErrorCode  int    `json:"errorCode"`
    ErrorType  string `json:"errorType"`
+   Type       string `json:"type"`
 }
 
-func hasErrors(data *[]byte) (err error) {
+func (i *nerdgraph) hasErrors(data *[]byte) (err error) {
    defer func() {
       log.Debugf("hassErrors: returning %v", err)
    }()
@@ -46,19 +47,54 @@ func hasErrors(data *[]byte) (err error) {
       return
    }
 
-   if err = typeSpecificError(data, s); err != nil {
+   if err = i.typeSpecificError(data, s); err != nil {
       return
    }
    return
 }
 
 // typeSpecific error is a bit complex, we don't know the shape so we have to travel a map[string]interface{}
-func typeSpecificError(data *[]byte, s string) (err error) {
-   // TODO
+func (i *nerdgraph) typeSpecificError(data *[]byte, s string) (err error) {
    defer func() {
       log.Debugf("typeSpecificError: returning %v", err)
    }()
+   e, err := findKeyValue(*data, "errors")
+   log.Debugf("typeSpecificError: found: %v %T", e, e)
+   if err != nil {
+      return
+   }
+   if e == nil {
+      return
+   }
 
+   errorMap := make(map[string]interface{})
+   i.getErrorMap(e, errorMap)
+
+   if errorMap == nil {
+      log.Warnf("Empty errors array: %v+ %T", e, e)
+      return
+   }
+   _type := fmt.Sprintf("%v", errorMap[i.model.GetErrorKey()])
+   if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not_found") {
+      err = fmt.Errorf("%w Not found", &cferror.NotFound{})
+      return
+   }
+   return
+}
+
+func (i *nerdgraph) getErrorMap(v interface{}, result map[string]interface{}) {
+   switch k := v.(type) {
+   case []interface{}:
+      for _, j := range k {
+         i.getErrorMap(j, result)
+      }
+   case map[string]interface{}:
+      for key, value := range k {
+         result[key] = value
+      }
+   default:
+      log.Warnf("getErrorMap: unknown value/type: %+v %T", k, k)
+   }
    return
 }
 
@@ -94,7 +130,14 @@ func serverError(data *[]byte, s string) (err error) {
    }
    var errorCode = r.Errors[0].Extensions.ErrorCode
    var errorMessage = r.Errors[0].Message
-   log.Infof("serverError: code: %d message: %s", errorCode, errorMessage)
+   var _type = r.Errors[0].Extensions.Type
+   var errorType = r.Errors[0].Extensions.ErrorType
+   log.Infof("serverError: code: %d message: %s errorType: %s type: %s", errorCode, errorMessage, errorType, _type)
+
+   if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not_found") {
+      err = fmt.Errorf("%w Not found", &cferror.NotFound{})
+      return
+   }
 
    // In-case we can't find a specific error
    if errorCode == 0 {
