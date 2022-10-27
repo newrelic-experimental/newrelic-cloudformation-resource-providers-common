@@ -132,9 +132,10 @@ func serverError(data *[]byte, s string) (err error) {
    var errorMessage = r.Errors[0].Message
    var _type = r.Errors[0].Extensions.Type
    var errorType = r.Errors[0].Extensions.ErrorType
+   msg := strings.ToLower(errorMessage + _type + errorType)
    log.Infof("serverError: code: %d message: %s errorType: %s type: %s", errorCode, errorMessage, errorType, _type)
 
-   if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not_found") {
+   if strings.Contains(msg, "not_found") || strings.Contains(msg, "not found") {
       err = fmt.Errorf("%w Not found", &cferror.NotFound{})
       return
    }
