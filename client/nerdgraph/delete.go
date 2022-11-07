@@ -9,6 +9,9 @@ import (
 )
 
 func (i *nerdgraph) Delete(m model.Model) (err error) {
+   if err = i.Read(m); err != nil {
+      return
+   }
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)
    mutation := m.GetDeleteMutation()
@@ -39,7 +42,7 @@ func (i *nerdgraph) Delete(m model.Model) (err error) {
    key := m.GetResultKey(model.Delete)
    if key != "" {
       var v interface{}
-      v, err = findKeyValue(body, key)
+      v, err = FindKeyValue(body, key)
       if err != nil {
          log.Errorf("error finding result key: %s in response: %s", key, string(body))
          return
@@ -57,6 +60,7 @@ func (i *nerdgraph) Delete(m model.Model) (err error) {
    err = nil
    for err == nil {
       err = i.Read(m)
+      time.Sleep(5 * time.Second)
    }
    delta := time.Now().Sub(start)
    log.Debugf("DeleteMutation: propagation delay: %v", delta)

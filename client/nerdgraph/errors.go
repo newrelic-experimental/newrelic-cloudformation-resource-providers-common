@@ -5,6 +5,7 @@ import (
    "fmt"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/cferror"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/logging"
+   "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/model"
    log "github.com/sirupsen/logrus"
    "strings"
 )
@@ -28,9 +29,25 @@ type extensions struct {
    Type       string `json:"type"`
 }
 
-func (i *nerdgraph) hasErrors(data *[]byte) (err error) {
+func NewCommonErrorHandler(m model.Model) (eh model.ErrorHandler) {
+   log.Debugf("errors.NewCommonErrorHandler: enter: model %p", m)
    defer func() {
-      log.Debugf("hassErrors: returning %v", err)
+      log.Debugf("errors.NewCommonErrorHandler: exit : %p", eh)
+   }()
+   eh = &CommonErrorHandler{M: m}
+   return eh
+}
+
+// CommonErrorHandler implements ErrorHandler and provides a common, default, implementation of dealing with errors coming out of API calls.
+type CommonErrorHandler struct {
+   M model.Model
+}
+
+// HasErrors can't be a method on ErrorHandler due to the way Go handles (or doesn't) dispatch- no v-table :-(
+func HasErrors(e model.ErrorHandler, data *[]byte) (err error) {
+   log.Debugf("HasErrors: %p enter", e)
+   defer func() {
+      log.Debugf("HasErrors: %p returning %v", e, err)
    }()
    // Empty
    if data == nil {
@@ -43,71 +60,77 @@ func (i *nerdgraph) hasErrors(data *[]byte) (err error) {
       return
    }
 
-   if err = serverError(data, s); err != nil {
+   if err = e.ServerError(data, s); err != nil {
       return
    }
 
-   if err = i.typeSpecificError(data, s); err != nil {
+   if err = e.TypeSpecificError(data, s); err != nil {
       return
    }
    return
 }
 
-// typeSpecific error is a bit complex, we don't know the shape so we have to travel a map[string]interface{}
-func (i *nerdgraph) typeSpecificError(data *[]byte, s string) (err error) {
+// TypeSpecificError is a bit complex, we don't know the shape so we have to travel a map[string]interface{}
+func (e *CommonErrorHandler) TypeSpecificError(data *[]byte, s string) (err error) {
+   log.Debugf("TypeSpecificError: %p enter", e)
    defer func() {
-      log.Debugf("typeSpecificError: returning %v", err)
+      log.Debugf("TypeSpecificError: %p returning %v", e, err)
    }()
-   e, err := findKeyValue(*data, "errors")
-   log.Debugf("typeSpecificError: found: %v %T", e, e)
+   v, err := FindKeyValue(*data, "errors")
+   log.Debugf("TypeSpecificError: found: %v %T", v, v)
    if err != nil {
       return
    }
-   if e == nil {
+   if v == nil {
       return
    }
 
    errorMap := make(map[string]interface{})
-   i.getErrorMap(e, errorMap)
+   e.GetErrorMap(v, errorMap)
 
    if errorMap == nil {
       log.Warnf("Empty errors array: %v+ %T", e, e)
       return
    }
-   _type := fmt.Sprintf("%v", errorMap[i.model.GetErrorKey()])
-   if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not_found") {
+   _type := fmt.Sprintf("%v", errorMap[e.M.GetErrorKey()])
+   if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not found") {
       err = fmt.Errorf("%w Not found", &cferror.NotFound{})
       return
    }
    return
 }
 
-func (i *nerdgraph) getErrorMap(v interface{}, result map[string]interface{}) {
+func (e *CommonErrorHandler) GetErrorMap(v interface{}, result map[string]interface{}) {
+   log.Debugf("GetErrorMap: enter %p", e)
+   defer func() {
+      log.Debugf("GetErrorMap: exit %p", e)
+   }()
    switch k := v.(type) {
    case []interface{}:
       for _, j := range k {
-         i.getErrorMap(j, result)
+         e.GetErrorMap(j, result)
       }
    case map[string]interface{}:
       for key, value := range k {
          result[key] = value
       }
    default:
-      log.Warnf("getErrorMap: unknown value/type: %+v %T", k, k)
+      log.Warnf("GetErrorMap: unknown value/type: %+v %T", k, k)
    }
    return
 }
 
-// serverError is relatively simple, we know its shape
-func serverError(data *[]byte, s string) (err error) {
+// ServerError is relatively simple, we know its shape
+func (e *CommonErrorHandler) ServerError(data *[]byte, s string) (err error) {
+   log.Debugf("ServerError: %p exit", e)
    defer func() {
-      log.Debugf("serverError: returning %v", err)
+      log.Debugf("ServerError: %p returning %v", e, err)
    }()
 
    r := genericRoot{}
    err = json.Unmarshal(*data, &r)
    if err != nil {
-      log.Errorf("serverError: unmarshal %v", err)
+      log.Errorf("ServerError: unmarshal %v", err)
       err = fmt.Errorf("%w %s", &cferror.UnknownError{}, s)
       return
    }
@@ -119,7 +142,7 @@ func serverError(data *[]byte, s string) (err error) {
 
    // At this point we actually have something
    if len(r.Errors) > 1 {
-      log.Warnf("serverError: %d errors returned from NerdGraph, the first is used the remainder logged", len(r.Errors))
+      log.Warnf("ServerError: %d errors returned from NerdGraph, the first is used the remainder logged", len(r.Errors))
    }
    for i, e := range r.Errors {
       // Don't log the first error, we'll return it as the error value
@@ -133,7 +156,7 @@ func serverError(data *[]byte, s string) (err error) {
    var _type = r.Errors[0].Extensions.Type
    var errorType = r.Errors[0].Extensions.ErrorType
    msg := strings.ToLower(errorMessage + _type + errorType)
-   log.Infof("serverError: code: %d message: %s errorType: %s type: %s", errorCode, errorMessage, errorType, _type)
+   log.Infof("ServerError: code: %d message: %s errorType: %s type: %s", errorCode, errorMessage, errorType, _type)
 
    if strings.Contains(msg, "not_found") || strings.Contains(msg, "not found") {
       err = fmt.Errorf("%w Not found", &cferror.NotFound{})
@@ -142,7 +165,7 @@ func serverError(data *[]byte, s string) (err error) {
 
    // In-case we can't find a specific error
    if errorCode == 0 {
-      log.Errorf("serverError: non-specific error %s", s)
+      log.Errorf("ServerError: non-specific error %s", s)
       err = fmt.Errorf("%w %s", &cferror.UnknownError{}, s)
       return
    }

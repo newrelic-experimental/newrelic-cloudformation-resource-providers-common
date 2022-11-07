@@ -38,7 +38,7 @@ func (i *nerdgraph) Create(m model.Model) (err error) {
    key := m.GetResultKey(model.Create)
    if key != "" {
       var v interface{}
-      v, err = findKeyValue(body, key)
+      v, err = FindKeyValue(body, key)
       if err != nil {
          log.Errorf("Create: error finding result key: %s in response: %s", key, string(body))
          return err
@@ -53,6 +53,7 @@ func (i *nerdgraph) Create(m model.Model) (err error) {
    for err != nil {
       err = i.Read(m)
       // err = nil
+      time.Sleep(5 * time.Second)
    }
    delta := time.Now().Sub(start)
    log.Debugf("CreateMutation: propagation delay: %v", delta)

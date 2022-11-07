@@ -51,18 +51,21 @@ func (i *nerdgraph) Read(m model.Model) (err error) {
       return
    }
 
+   // Some NerdGraph APIs do not return an error on NOT FOUND, rather they return an empty result
    key := m.GetResultKey(model.Read)
    if key != "" {
       var v interface{}
-      v, err = findKeyValue(body, key)
+      v, err = FindKeyValue(body, key)
       if err != nil {
          log.Errorf("error finding result key: %s in response: %s", key, string(body))
+         err = fmt.Errorf("%w Not found key: %s", &cferror.NotFound{}, key)
          return
       }
 
       if v == nil {
          log.Errorf("Read: result not returned by NerdGraph operation")
-         err = fmt.Errorf("%w Read: result not returned by NerdGraph operation", &cferror.InvalidRequest{})
+         // err = fmt.Errorf("%w Read: result not returned by NerdGraph operation", &cferror.InvalidRequest{})
+         err = fmt.Errorf("%w Not found key: %s value: %v", &cferror.NotFound{}, key, v)
          return
       }
    }

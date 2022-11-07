@@ -8,6 +8,9 @@ import (
 )
 
 func (i *nerdgraph) Update(m model.Model) (err error) {
+   if err = i.Read(m); err != nil {
+      return
+   }
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)
    mutation := m.GetUpdateMutation()
@@ -36,7 +39,7 @@ func (i *nerdgraph) Update(m model.Model) (err error) {
    key := m.GetResultKey(model.Update)
    if key != "" {
       var v interface{}
-      v, err = findKeyValue(body, key)
+      v, err = FindKeyValue(body, key)
       if err != nil {
          log.Errorf("Update: error finding result key: %s in response: %s", key, string(body))
          return

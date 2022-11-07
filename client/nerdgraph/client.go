@@ -11,16 +11,22 @@ import (
 )
 
 type nerdgraph struct {
-   client *resty.Client
-   config *configuration.Config
-   model  model.Model
+   client       *resty.Client
+   config       *configuration.Config
+   model        model.Model
+   errorHandler model.ErrorHandler
 }
 
-func NewClient(config *configuration.Config, model model.Model) *nerdgraph {
-   return &nerdgraph{client: resty.New(), config: config, model: model}
+func NewClient(config *configuration.Config, model model.Model, errorHandler model.ErrorHandler) *nerdgraph {
+   log.Debugf("client.NewClient: errorHandler: %p", errorHandler)
+   return &nerdgraph{client: resty.New(), config: config, model: model, errorHandler: errorHandler}
 }
 
 func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBody []byte, err error) {
+   defer func() {
+      log.Debugf("client.emit exit: errorHandler: %p %+v", i.errorHandler, i.errorHandler)
+   }()
+   log.Debugf("client.emit enter: errorHandler: %p %+v", i.errorHandler, i.errorHandler)
    log.Debugln("emit: body: ", body)
    log.Debugln("")
 
@@ -58,6 +64,6 @@ func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBo
    respBody = resp.Body()
    logging.Dump(log.DebugLevel, string(respBody), "emit: response: ")
 
-   err = i.hasErrors(&respBody)
+   err = HasErrors(i.errorHandler, &respBody)
    return
 }

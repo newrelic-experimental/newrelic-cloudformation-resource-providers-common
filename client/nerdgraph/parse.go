@@ -9,13 +9,13 @@ import (
 
 func findAllKeyValues(data []byte, key string) (values []interface{}, err error) {
    defer func() {
-      log.Debugf("findKeyValues: returning: %v %T err: %v", values, values, err)
+      log.Debugf("findAllKeyValues: returning: %v %T err: %v", values, values, err)
    }()
 
    m := map[string]interface{}{}
    err = json.Unmarshal(data, &m)
    if err != nil {
-      log.Errorf("findKeyValue: unmarshal %v", err)
+      log.Errorf("findAllKeyValues: unmarshal %v", err)
       err = fmt.Errorf("%w %v", &cferror.UnknownError{}, err)
       return
    }
@@ -28,9 +28,9 @@ func findAllKeyValues(data []byte, key string) (values []interface{}, err error)
    return
 }
 
-func findKeyValue(data []byte, key string) (value interface{}, err error) {
+func FindKeyValue(data []byte, key string) (value interface{}, err error) {
    defer func() {
-      log.Debugf("findKeyValue: returning: %v %T err: %v", value, value, err)
+      log.Debugf("FindKeyValue: returning: %v %T err: %v", value, value, err)
    }()
 
    v, err := findAllKeyValues(data, key)
