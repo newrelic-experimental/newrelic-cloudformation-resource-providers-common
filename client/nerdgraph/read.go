@@ -26,27 +26,27 @@ func (i *nerdgraph) Read(m model.Model) (err error) {
       log.Debugf("Read: returning value: %+v type: %T", err, err)
    }()
 
+   query := m.GetReadQuery()
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)
-   mutation := m.GetReadQuery()
 
-   // Render the mutation
-   mutation, err = model.Render(mutation, variables)
+   // Render the query
+   query, err = model.Render(query, variables)
    if err != nil {
       log.Errorf("Read: %v", err)
       return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, err.Error())
    }
-   log.Debugln("Read: rendered mutation: ", mutation)
+   log.Debugln("Read: rendered query: ", query)
    log.Debugln("")
 
-   // Validate mutation
-   err = model.Validate(&mutation)
+   // Validate query
+   err = model.Validate(&query)
    if err != nil {
       log.Errorf("Read: %v", err)
       return fmt.Errorf("%w %s", &cferror.InvalidRequest{}, err.Error())
    }
 
-   body, err := i.emit(mutation, *i.config.APIKey, i.config.GetEndpoint())
+   body, err := i.emit(query, *i.config.APIKey, i.config.GetEndpoint())
    if err != nil {
       return
    }

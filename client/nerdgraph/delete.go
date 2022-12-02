@@ -1,6 +1,7 @@
 package nerdgraph
 
 import (
+   "errors"
    "fmt"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/cferror"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/model"
@@ -56,13 +57,22 @@ func (i *nerdgraph) Delete(m model.Model) (err error) {
    }
    // Allow for the NRDB propagation delay by doing a spin Read
    // FUTURE add some sort of timeout interrupt (channel?)
-   // Call Read until it returns Not Found
-   err = nil
+   // Call Read until it returns an arror, hopefully NotFound
+   // Allow for the NRDB propagation delay by doing a spin Read
+   err = i.Read(m)
    for err == nil {
       err = i.Read(m)
-      time.Sleep(5 * time.Second)
+      log.Debugf("common.Delete: spin lock: %+v", err)
+      time.Sleep(1 * time.Second)
+      // FUTURE add some sort of timeout interrupt
+   }
+   // Delete _wants_ to wait for NotFound, therefore return nil to indicate OK
+
+   var nf *cferror.NotFound
+   if err != nil && errors.As(err, &nf) {
+      err = nil
    }
    delta := time.Now().Sub(start)
-   log.Debugf("DeleteMutation: propagation delay: %v", delta)
-   return nil
+   log.Debugf("DeleteMutation: exit: err: %+v propagation delay: %v", err, delta)
+   return
 }
