@@ -12,10 +12,11 @@ import (
 // TODO Update should *only* update
 
 func (i *nerdgraph) Update(m model.Model) (err error) {
-   // TODO move this up one level, it's part of the contract
-   if err = i.Read(m); err != nil {
-      return
-   }
+   log.Debugf("nerdgraph.Update: enter")
+   // TODONE move this up one level, it's part of the contract
+   // if err = i.Read(m); err != nil {
+   //    return
+   // }
 
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)

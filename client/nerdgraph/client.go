@@ -13,12 +13,13 @@ import (
 type nerdgraph struct {
    client       *resty.Client
    config       *configuration.Config
-   model        model.Model
+   model        model.Model // FIXME model not used
    errorHandler model.ErrorHandler
 }
 
 func NewClient(config *configuration.Config, model model.Model, errorHandler model.ErrorHandler) *nerdgraph {
    log.Debugf("client.NewClient: errorHandler: %p", errorHandler)
+   // FIXME this can be a singleton based on typeName as the same type will use the same errorHandler
    return &nerdgraph{client: resty.New(), config: config, model: model, errorHandler: errorHandler}
 }
 

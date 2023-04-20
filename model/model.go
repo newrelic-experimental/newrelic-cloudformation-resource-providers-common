@@ -43,4 +43,6 @@ type Model interface {
    NewModelFromGuid(g interface{}) Model
    // GetErrorKey returns the key of the error 'type' field
    GetErrorKey() string
+   HasTags() bool
+   GetTags() map[string]string
 }

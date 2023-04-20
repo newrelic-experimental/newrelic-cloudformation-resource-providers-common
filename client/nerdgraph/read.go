@@ -26,6 +26,11 @@ func (i *nerdgraph) Read(m model.Model) (err error) {
       log.Debugf("Read: returning value: %+v type: %T", err, err)
    }()
 
+   if m.GetGuid() == nil {
+      log.Errorf("Read: missing guid")
+      err = fmt.Errorf("%w Missing guid", &cferror.NotFound{})
+      return
+   }
    query := m.GetReadQuery()
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)
