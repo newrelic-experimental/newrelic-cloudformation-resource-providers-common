@@ -192,9 +192,9 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
       log.Debugf("UpdateMutation: client.Read: HandlerErrorCode: %v", errors.Unwrap(err))
       log.Debugf("Update mutation: Failed 1")
       return handler.ProgressEvent{
-         OperationStatus:  handler.Failed,
-         HandlerErrorCode: errors.Unwrap(err).Error(),
-         Message:          fmt.Sprintf("Update error: %s", err.Error()),
+         OperationStatus: handler.Failed,
+         //         HandlerErrorCode: errors.Unwrap(err).Error(),
+         Message: fmt.Sprintf("Update error: %s", err.Error()),
          //         ResourceModel:    model.GetResourceModel(),
       }, nil
    }

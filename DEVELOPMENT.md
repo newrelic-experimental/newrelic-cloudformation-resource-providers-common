@@ -1,3 +1,8 @@
+## Docs
+- [AWS CloudFormation CLI](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/cloudformation/index.html)
+- [CFN CLI](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-cli.html)
+- [Registering an extension privately (step 1)](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-register.html)
+- [Publishing an extension publicly (step 2)](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html)
 ## Troubleshooting
 - Error log
 - `Debug` log level for mustache substitution

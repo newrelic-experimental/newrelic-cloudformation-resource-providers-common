@@ -1,11 +1,12 @@
-## Description
-This Cloud Formation Custom Resource provides a CRUDL interface to the New Relic [NerdGraph (GraphQL) Workloads API](https://docs.newrelic.com/docs/apis/nerdgraph/examples/nerdgraph-workloads-api-tutorials/) for Cloud Formation stacks.
+# Introduction
+
+This document documents the configuration required of all NewRelic::Observability public extensions. This configuration is _required_.
 
 ## Prerequisites
 This document assumes familiarity with using CloudFormation Public extensions in CloudFormation templates. If you are not familiar with this [start here](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-public.html)
 
 ## CloudFormation Configuration
-NewRelic::Observability::Workloads requires the following AWS Type Configuration per activated region
+NewRelic::Observability public extensions require the following AWS Type Configuration per activated region
 
 | Field           | Type   | Default                          | Required | Notes                                                                                                                       |
 |-----------------|--------|----------------------------------|:--------:|-----------------------------------------------------------------------------------------------------------------------------|
