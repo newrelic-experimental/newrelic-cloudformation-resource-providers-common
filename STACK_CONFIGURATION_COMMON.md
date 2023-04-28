@@ -1,6 +1,6 @@
-# Model common configuration
+# Stack common configuration
 
-This document documents the configuration common to all NewRelic::Observability public extension Models.
+This document documents the configuration common to all Stacks using NewRelic::Observability public extensions.
 
 ## Model
 | Field           | Type   | Default                          | Create | Update | Delete | Read | List | Notes                      |

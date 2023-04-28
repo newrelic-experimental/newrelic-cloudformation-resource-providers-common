@@ -1,4 +1,4 @@
-# Introduction
+# Extension configuration
 
 This document documents the configuration required of all NewRelic::Observability public extensions. This configuration is _required_.
 
