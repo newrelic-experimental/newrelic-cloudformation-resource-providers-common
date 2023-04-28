@@ -3,12 +3,12 @@
 This document documents the configuration common to all Stacks using NewRelic::Observability public extensions.
 
 ## Model
-| Field           | Type   | Default                          | Create | Update | Delete | Read | List | Notes                      |
-|-----------------|--------|----------------------------------|:------:|:------:|:------:|:----:|:----:|----------------------------|
-| Guid            | string | none                             |        |   R    |   R    |  R   |      | See Common Model           |
-| ListQueryFilter | string | none                             |        |        |        |      |  R   | See Common Model           |
-| Variables       | Object | none                             |   O    |   O    |        |  O   |  O   | See Common Model           |
-| Tags            | Object | none                             |   O    |   O    |        |      |      | See Common Model           |                                                                                                                             |
+| Field           | Type   | Default | Create | Update | Delete | Read | List | Notes |
+|-----------------|--------|---------|:------:|:------:|:------:|:----:|:----:|-------|
+| Guid            | string | none    |        |   R    |   R    |  R   |      |       |
+| ListQueryFilter | string | none    |        |        |        |      |  R   |       |
+| Variables       | Object | none    |   O    |   O    |        |  O   |  O   |       |
+| Tags            | Object | none    |   O    |   O    |        |      |      |       |                                                                                                                             |
 
 
 ### Guid
@@ -69,7 +69,7 @@ Variable names reserved by the system:
 If you use a reserved Variable your value will be overwritten by the system.
 
 ### Tags
-`Tags` is a list of key/value pairs (string/string) (yaml object) that are attached Created/Updated entity with the [NerdGraph Tagging API](https://docs.newrelic.com/docs/apis/nerdgraph/examples/nerdgraph-tagging-api-tutorial/)
+`Tags` is a list of key/value pairs (string/string) (yaml object) that are attached to the Created/Updated entity with the [NerdGraph Tagging API](https://docs.newrelic.com/docs/apis/nerdgraph/examples/nerdgraph-tagging-api-tutorial/)
 
 A `Create` operation uses the `taggingAddTagsToEntity` mutation, an `Update` operatino uses the `taggingReplaceTagsOnEntity` mutation.
 
