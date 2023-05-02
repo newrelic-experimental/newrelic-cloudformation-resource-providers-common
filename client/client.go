@@ -59,9 +59,9 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
    }()
 
    // Test for and return a queued event/err pair if any
-   evt, err := getEvent(i.req)
-   if evt != nil {
-      return *evt, err
+   evt, ok, err := getEvent(i.req)
+   if ok {
+      return evt, err
    }
 
    // Create the entity
@@ -86,7 +86,7 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
             if er != nil {
                evt2 = handler.ProgressEvent{
                   OperationStatus:  handler.Failed,
-                  HandlerErrorCode: errors.Unwrap(er).Error(),
+                  HandlerErrorCode: errorCode(er),
                   Message:          fmt.Sprintf("Create error: %s", er.Error()),
                }
             } else {
@@ -110,30 +110,43 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
       // Error creating the entity. Return Failed
       event = handler.ProgressEvent{
          OperationStatus:  handler.Failed,
-         HandlerErrorCode: errors.Unwrap(err).Error(),
+         HandlerErrorCode: errorCode(err),
          Message:          fmt.Sprintf("Create error: %s", err.Error()),
       }
    }
    return event, nil
 }
 
+func errorCode(e error) (ec string) {
+   if errors.Unwrap(e) == nil {
+      ec = e.Error()
+   } else {
+      ec = errors.Unwrap(e).Error()
+   }
+   return
+}
+
+//
+// CAUTION:
+//   Making the ProgressEvent a pointer is more efficient, however leads to a map concurrency issue.
+//
 var mu sync.Mutex
-var events = make(map[string]*handler.ProgressEvent)
+var events = make(map[string]handler.ProgressEvent)
 var errs = make(map[string]error)
 
 func setEvent(req handler.Request, event handler.ProgressEvent, err error) {
    defer mu.Unlock()
    mu.Lock()
-   events[req.LogicalResourceID] = &event
+   events[req.LogicalResourceID] = event
    errs[req.LogicalResourceID] = err
 }
 
-func getEvent(req handler.Request) (*handler.ProgressEvent, error) {
+func getEvent(req handler.Request) (handler.ProgressEvent, bool, error) {
    defer mu.Unlock()
    mu.Lock()
-   evt := events[req.LogicalResourceID]
-   if evt == nil {
-      return nil, nil
+   evt, ok := events[req.LogicalResourceID]
+   if !ok {
+      return evt, ok, nil
    }
 
    err := errs[req.LogicalResourceID]
@@ -143,7 +156,7 @@ func getEvent(req handler.Request) (*handler.ProgressEvent, error) {
       delete(errs, req.LogicalResourceID)
    }
 
-   return evt, err
+   return evt, ok, err
 }
 
 func (i *GraphqlClient) DeleteMutation(model model.Model) (event handler.ProgressEvent, err error) {
@@ -164,7 +177,7 @@ func (i *GraphqlClient) DeleteMutation(model model.Model) (event handler.Progres
       fmt.Printf("DeleteMutation: error: %+v", err)
       event = handler.ProgressEvent{
          OperationStatus:  handler.Failed,
-         HandlerErrorCode: errors.Unwrap(err).Error(),
+         HandlerErrorCode: errorCode(err),
          Message:          fmt.Sprintf("Delete error: %s", err.Error()),
       }
    }
@@ -182,19 +195,19 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
    log.Debugf("client.UpdateMutation: enter")
 
    // Test for and return a queued event/err pair if any
-   evt, err := getEvent(i.req)
-   if evt != nil {
-      return *evt, nil
+   evt, ok, err := getEvent(i.req)
+   if ok {
+      return evt, nil
    }
 
    // Verify the entity exists as this is an update
    if err = i.client.Read(model); err != nil {
-      log.Debugf("UpdateMutation: client.Read: HandlerErrorCode: %v", errors.Unwrap(err))
+      log.Debugf("UpdateMutation: client.Read: HandlerErrorCode: %v", errorCode(err))
       log.Debugf("Update mutation: Failed 1")
       return handler.ProgressEvent{
-         OperationStatus: handler.Failed,
-         //         HandlerErrorCode: errors.Unwrap(err).Error(),
-         Message: fmt.Sprintf("Update error: %s", err.Error()),
+         OperationStatus:  handler.Failed,
+         HandlerErrorCode: errorCode(err),
+         Message:          fmt.Sprintf("Update error: %s", err.Error()),
          //         ResourceModel:    model.GetResourceModel(),
       }, nil
    }
@@ -221,7 +234,7 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
                log.Debugf("Update mutation: Failed 2")
                evt2 = handler.ProgressEvent{
                   OperationStatus:  handler.Failed,
-                  HandlerErrorCode: errors.Unwrap(er).Error(),
+                  HandlerErrorCode: errorCode(er),
                   //                  ResourceModel:    model.GetResourceModel(),
                   Message: fmt.Sprintf("Update error: %s", er.Error()),
                }
@@ -246,7 +259,7 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
       log.Debugf("Update mutation: Failed 3")
       event = handler.ProgressEvent{
          OperationStatus:  handler.Failed,
-         HandlerErrorCode: errors.Unwrap(err).Error(),
+         HandlerErrorCode: errorCode(err),
          Message:          fmt.Sprintf("Update error: %s", err.Error()),
          //         ResourceModel:    model.GetResourceModel(),
       }
@@ -272,7 +285,7 @@ func (i *GraphqlClient) ReadQuery(model model.Model) (event handler.ProgressEven
    } else {
       event = handler.ProgressEvent{
          OperationStatus:  handler.Failed,
-         HandlerErrorCode: errors.Unwrap(err).Error(),
+         HandlerErrorCode: errorCode(err),
          Message:          fmt.Sprintf("Read error: %s", err.Error()),
       }
    }

@@ -90,6 +90,9 @@ aws cloudformation describe-type --region us-east-1  --arn arn:aws:cloudformatio
 ```
   - Correct IAM Permissions Policies- `AWSCloudFormationFullAccess` 
 
+- If a test fails and the Progress Event _looks_ right in the console check `rpdk.log`. If that doesn't help suspect that an error is being returned to the sdk in addition to the Progress Event.
+
+
 ## Helpful links
 - [CloudFormation CLI User Guide](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/what-is-cloudformation-cli.html)
 - [New Relic GraphQL Explorer](https://api.newrelic.com/graphiql) 
