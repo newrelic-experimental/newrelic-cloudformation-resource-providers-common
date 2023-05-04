@@ -2,12 +2,15 @@ package nerdgraph
 
 import (
    "encoding/json"
+   "errors"
    "fmt"
    "github.com/go-resty/resty/v2"
+   "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/cferror"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/configuration"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/logging"
    "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/model"
    log "github.com/sirupsen/logrus"
+   "time"
 )
 
 type nerdgraph struct {
@@ -45,26 +48,38 @@ func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBo
    var postResult PostResult
    var postError PostError
 
-   resp, err := i.client.R().
-      SetBody(bodyJson).
-      SetHeaders(headers).
-      SetResult(&postResult).
-      SetError(&postError).
-      Post(apiEndpoint)
+   var timeout *cferror.Timeout
+   retry := true
+   for retry {
+      var resp *resty.Response
+      resp, err = i.client.R().
+         SetBody(bodyJson).
+         SetHeaders(headers).
+         SetResult(&postResult).
+         SetError(&postError).
+         Post(apiEndpoint)
 
-   if err != nil {
-      log.Errorf("Error POSTing %v", err)
-      return
+      if err != nil {
+         log.Errorf("Error POSTing %v", err)
+         return
+      }
+      if resp.StatusCode() >= 300 {
+         log.Errorf("Bad status code POSTing %s error: %s ", resp.Status(), bodyJson)
+         err = fmt.Errorf("%s", resp.Status())
+         return
+      }
+
+      respBody = resp.Body()
+      logging.Dump(log.DebugLevel, string(respBody), "emit: response: ")
+
+      err = HasErrors(i.errorHandler, &respBody)
+      // NOTE: This spin lock must be sync due to create having to return the guid first try
+      if errors.As(err, &timeout) {
+         log.Warnf("emit: retrying due to timeout %v", err)
+         time.Sleep(1 * time.Second)
+      } else {
+         retry = false
+      }
    }
-   if resp.StatusCode() >= 300 {
-      log.Errorf("Bad status code POSTing %s error: %s ", resp.Status(), bodyJson)
-      err = fmt.Errorf("%s", resp.Status())
-      return
-   }
-
-   respBody = resp.Body()
-   logging.Dump(log.DebugLevel, string(respBody), "emit: response: ")
-
-   err = HasErrors(i.errorHandler, &respBody)
    return
 }

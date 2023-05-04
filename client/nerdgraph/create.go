@@ -53,6 +53,11 @@ func (i *nerdgraph) Create(m model.Model) (err error) {
    var nf *cferror.NotFound
    for err != nil && errors.As(err, &nf) {
       err = i.Read(m)
+      var timeout *cferror.Timeout
+      if errors.As(err, &timeout) {
+         log.Warnf("Create: retrying due to timeout %v", err)
+         err = nil
+      }
       log.Debugf("common.Create: spin lock: %+v", err)
       time.Sleep(1 * time.Second)
       // FUTURE add some sort of timeout interrupt

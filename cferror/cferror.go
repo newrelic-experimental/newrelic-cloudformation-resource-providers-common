@@ -4,6 +4,18 @@ import (
    "github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
+type Timeout struct {
+   Err error
+}
+
+func (e *Timeout) Error() string {
+   return cloudformation.HandlerErrorCodeNetworkFailure
+}
+
+func (e *Timeout) Unwrap() error {
+   return e.Err
+}
+
 type InvalidRequest struct {
    Err error
 }

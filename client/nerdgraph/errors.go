@@ -165,6 +165,11 @@ func (e *CommonErrorHandler) ServerError(data *[]byte, s string) (err error) {
       return
    }
 
+   if strings.Contains(msg, "ConnectTimeoutException") || strings.Contains(msg, "timed out") {
+      err = fmt.Errorf("%w Timeout", &cferror.Timeout{})
+      return
+   }
+
    // In-case we can't find a specific error
    if errorCode == 0 {
       log.Errorf("ServerError: non-specific error %s", s)
@@ -173,8 +178,12 @@ func (e *CommonErrorHandler) ServerError(data *[]byte, s string) (err error) {
    }
 
    switch errorCode {
+   case 0:
+      // Might be unknown, might be timeout- have to look at the message
    case 404:
       err = fmt.Errorf("%w Not found", &cferror.NotFound{})
+   case 502:
+      // Timeout
    default:
       err = fmt.Errorf("%w code: %d message: %s", &cferror.UnknownError{}, errorCode, errorMessage)
    }

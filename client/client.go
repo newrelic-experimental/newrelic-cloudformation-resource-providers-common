@@ -65,6 +65,7 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
    }
 
    // Create the entity
+   // WARNING: both i.client.Create & i.client.emit MUST be sync as we have to return then guid first try unless we Failed
    err = i.client.Create(model)
 
    if err == nil {
