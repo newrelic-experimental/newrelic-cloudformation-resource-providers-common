@@ -25,15 +25,18 @@ func (i *nerdgraph) Read(m model.Model) (err error) {
    defer func() {
       log.Debugf("Read: returning value: %+v type: %T", err, err)
    }()
+   log.Debugf("Read: Enter: model: %+v", m.GetResourceModel())
+   log.Debugf("Read: Enter: variables: %+v", m.GetVariables())
 
-   if m.GetGuid() == nil {
-      log.Errorf("Read: missing guid")
-      err = fmt.Errorf("%w Missing guid", &cferror.NotFound{})
+   if m.GetIdentifier() == nil {
+      log.Errorf("Read: missing identifier")
+      err = fmt.Errorf("%w Missing identifier", &cferror.NotFound{})
       return
    }
    query := m.GetReadQuery()
    variables := m.GetVariables()
    i.config.InjectIntoMap(&variables)
+   log.Debugf("Read: variables: %+v", variables)
 
    // Render the query
    query, err = model.Render(query, variables)
@@ -57,22 +60,6 @@ func (i *nerdgraph) Read(m model.Model) (err error) {
    }
 
    // Some NerdGraph APIs do not return an error on NOT FOUND, rather they return an empty result
-   key := m.GetResultKey(model.Read)
-   if key != "" {
-      var v interface{}
-      v, err = FindKeyValue(body, key)
-      if err != nil {
-         log.Errorf("error finding result key: %s in response: %s", key, string(body))
-         err = fmt.Errorf("%w Not found key: %s", &cferror.NotFound{}, key)
-         return
-      }
 
-      if v == nil {
-         log.Errorf("Read: result not returned by NerdGraph operation")
-         // err = fmt.Errorf("%w Read: result not returned by NerdGraph operation", &cferror.InvalidRequest{})
-         err = fmt.Errorf("%w Not found key: %s value: %v", &cferror.NotFound{}, key, v)
-         return
-      }
-   }
-   return
+   return i.resultHandler.Read(m, body)
 }

@@ -32,11 +32,8 @@ type GraphqlClient struct {
    req    handler.Request
 }
 
-// FIXME this should not be a singleton!
-// var graphqlClient *GraphqlClient
-
-// func NewGraphqlClient(sess *session.Session, typeName *string, model model.Model, errorHandler model.ErrorHandler) *GraphqlClient {
-func NewGraphqlClient(req handler.Request, typeName *string, model model.Model, errorHandler model.ErrorHandler) *GraphqlClient {
+func NewGraphqlClient(req handler.Request, typeName *string, errorHandler model.ErrorHandler, resultHandler model.ResultHandler) *GraphqlClient {
+   // func NewGraphqlClient(req handler.Request, typeName *string, model model.Model, errorHandler model.ErrorHandler, resultHandler model.ResultHandler) *GraphqlClient {
    log.Debugf("client.NewGraphqlClient: enter: errorHandler: %p", errorHandler)
    // if graphqlClient == nil {
    //    graphqlClient = &GraphqlClient{
@@ -46,7 +43,8 @@ func NewGraphqlClient(req handler.Request, typeName *string, model model.Model, 
    // }
    // return graphqlClient
    return &GraphqlClient{
-      client: nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), model, errorHandler),
+      // client: nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), model, errorHandler, resultHandler),
+      client: nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), errorHandler, resultHandler),
       req:    req}
 }
 
@@ -78,9 +76,10 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
-            tagModel := tags.NewTagModel(model.GetGuid(), model.GetTags(), model.GetVariables())
+            tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
-            c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm))
+            // c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm), tags.NewResultHandler())
+            c := NewGraphqlClient(i.req, &tags.TypeName, tags.NewErrorHandler(sm), tags.NewResultHandler())
 
             var evt2 handler.ProgressEvent
             er := c.client.Create(sm)
@@ -225,9 +224,10 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
-            tagModel := tags.NewTagModel(model.GetGuid(), model.GetTags(), model.GetVariables())
+            tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
-            c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm))
+            // c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm), tags.NewResultHandler())
+            c := NewGraphqlClient(i.req, &tags.TypeName, tags.NewErrorHandler(sm), tags.NewResultHandler())
 
             var evt2 handler.ProgressEvent
             er := c.client.Update(sm)

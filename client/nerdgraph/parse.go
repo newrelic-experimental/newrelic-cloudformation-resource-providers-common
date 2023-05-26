@@ -59,8 +59,14 @@ func _findAllKeyValues(m map[string]interface{}, key string, values *[]interface
          for _, e := range v.([]interface{}) {
             if m, ok := e.(map[string]interface{}); ok {
                _findAllKeyValues(m, key, values)
+            } else if m, ok := e.([]string); ok {
+               for _, vv := range m {
+                  *values = append(*values, vv)
+               }
+            } else if m, ok := e.(string); ok {
+               *values = append(*values, m)
             } else {
-               log.Warnf("_findAllKeyValues: skipping [] of unknown type: %T at key: %s", e, k)
+               log.Warnf("_findAllKeyValues: skipping element of unknown type: %T at key: %s", e, k)
             }
          }
       default:

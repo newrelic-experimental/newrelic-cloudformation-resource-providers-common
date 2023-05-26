@@ -72,7 +72,6 @@ func HasErrors(e model.ErrorHandler, data *[]byte) (err error) {
 
 // TypeSpecificError is a bit complex, we don't know the shape so we have to travel a map[string]interface{}
 func (e *CommonErrorHandler) TypeSpecificError(data *[]byte, s string) (err error) {
-   // TODO drop 's' on next refactor
    log.Debugf("TypeSpecificError: %p enter", e)
    defer func() {
       log.Debugf("TypeSpecificError: %p returning %v", e, err)
@@ -123,7 +122,6 @@ func (e *CommonErrorHandler) GetErrorMap(v interface{}, result map[string]interf
 
 // ServerError is relatively simple, we know its shape
 func (e *CommonErrorHandler) ServerError(data *[]byte, s string) (err error) {
-   // TODO drop 's' on next refactor
    log.Debugf("ServerError: %p exit", e)
    defer func() {
       log.Debugf("ServerError: %p returning %v", e, err)

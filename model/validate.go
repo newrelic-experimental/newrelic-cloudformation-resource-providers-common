@@ -7,6 +7,7 @@ import (
    "github.com/graphql-go/graphql/language/parser"
    "github.com/graphql-go/graphql/language/source"
    log "github.com/sirupsen/logrus"
+   "strings"
 )
 
 func Validate(mutation *string) (err error) {
@@ -90,6 +91,22 @@ func FindFieldInSelectionSet(field string, set *ast.SelectionSet) (found bool) {
    return
 }
 
-func Render(mutation string, variables interface{}) (string, error) {
-   return mustache.Render(mutation, variables)
+func Render(mutation string, variables map[string]string) (s string, err error) {
+   // First moustache.Render the variables
+   for k, v := range variables {
+      // If this is run from cfn test then remove all jinja2 escape pairs that let OUR moustache braces through
+      // https://jinja.palletsprojects.com/en/3.0.x/templates/#escaping
+      v = strings.ReplaceAll(v, `{% raw %}`, "")
+      v = strings.ReplaceAll(v, `{% raw -%}`, "")
+      v = strings.ReplaceAll(v, `{% endraw %}`, "")
+      // Render the variables
+      variables[k], err = mustache.Render(v, variables)
+      if err != nil {
+         return
+      }
+   }
+   // Finally, render the mutation
+   s, err = mustache.Render(mutation, variables)
+   log.Debugf("Render: variables: %+v mutation: %s err: %v", variables, s, err)
+   return
 }

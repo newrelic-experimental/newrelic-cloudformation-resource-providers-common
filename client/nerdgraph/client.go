@@ -14,16 +14,16 @@ import (
 )
 
 type nerdgraph struct {
-   client       *resty.Client
-   config       *configuration.Config
-   model        model.Model // FIXME model not used
-   errorHandler model.ErrorHandler
+   client        *resty.Client
+   config        *configuration.Config
+   errorHandler  model.ErrorHandler
+   resultHandler model.ResultHandler
 }
 
-func NewClient(config *configuration.Config, model model.Model, errorHandler model.ErrorHandler) *nerdgraph {
+func NewClient(config *configuration.Config, errorHandler model.ErrorHandler, resultHandler model.ResultHandler) *nerdgraph {
    log.Debugf("client.NewClient: errorHandler: %p", errorHandler)
    // FIXME this can be a singleton based on typeName as the same type will use the same errorHandler
-   return &nerdgraph{client: resty.New(), config: config, model: model, errorHandler: errorHandler}
+   return &nerdgraph{client: resty.New(), config: config, errorHandler: errorHandler, resultHandler: resultHandler}
 }
 
 func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBody []byte, err error) {
@@ -39,7 +39,12 @@ func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBo
       return
    }
 
-   headers := map[string]string{"Content-Type": "application/json", "Api-Key": apiKey, "deep-trace": "true"}
+   headers := map[string]string{
+      "Content-Type": "application/json",
+      "Api-Key":      apiKey,
+      "deep-trace":   "true",
+      "User-Agent":   i.config.GetUserAgent(),
+   }
    log.Debugf("emit: headers: %+v", headers)
    type PostResult interface {
    }
@@ -83,3 +88,42 @@ func (i *nerdgraph) emit(body string, apiKey string, apiEndpoint string) (respBo
    }
    return
 }
+
+// func captureResult(m model.Model, action model.Action, body []byte) (err error) {
+//    for _, key := range m.GetCaptureKeys(action) {
+//       var v interface{}
+//       v, err = FindKeyValue(body, key)
+//       if err != nil {
+//          log.Errorf("Create: error finding result key: %s in response: %s", key, string(body))
+//          return
+//       }
+//       s := fmt.Sprintf("%v", v)
+//       if action == model.Create {
+//          setModel(m, key, s)
+//       }
+//    }
+//    return
+// }
+
+// func setModel(m model.Model, n string, v string) {
+//    // pointer to struct - addressable
+//    ps := reflect.ValueOf(m)
+//    pv := reflect.ValueOf(v)
+//    // struct
+//    s := ps.Elem()
+//    if s.Kind() == reflect.Struct {
+//       // exported field
+//       f := s.FieldByName(n)
+//       if f.IsValid() {
+//          // A Value can be changed only if it is
+//          // addressable and was not obtained by
+//          // the use of unexported struct fields.
+//          if f.CanSet() {
+//             // change value of N
+//             if f.Kind() == pv.Kind() {
+//                f.SetString(v)
+//             }
+//          }
+//       }
+//    }
+// }

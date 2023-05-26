@@ -43,22 +43,10 @@ func (i *nerdgraph) List(m model.Model) (err error) {
       return
    }
 
-   key := m.GetResultKey(model.List)
-   if key != "" {
-      var guids []interface{}
-      guids, err = findAllKeyValues(body, key)
-      if err != nil {
-         return
-      }
-
-      log.Debugf("List: guids: %+v", guids)
-      for _, g := range guids {
-         m.AppendToResourceModels(m.NewModelFromGuid(g))
-      }
-   } else {
-      log.Errorf("No result expected for List, this is probably an error")
+   err = i.resultHandler.List(m, body)
+   if err != nil {
+      return
    }
-
    // TODO process cursor
    // DOC By convention NEXTCURSOR is the field to substitute in the template
    return

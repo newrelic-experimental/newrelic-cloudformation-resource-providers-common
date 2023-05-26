@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Sample New Relic Alert Template
+Resources:
+  alertspolicyResource:
+    Type: 'NewRelic::Observability::AlertsPolicy'
+    Properties:
+      Name: 'CloudFormation test stack- alert policy'
+      IncidentPreference: 'PER_POLICY'
+
+  alertsnrqlconditionResource:
+    Type: 'NewRelic::Observability::AlertsNrqlCondition'
+    Properties:
+      ConditionType: "Static"
+      Condition: >-
+        condition: {
+                    enabled: false,
+                    name: "Test condition",
+                    nrql: {
+                        query: "SELECT uniqueCount(host) FROM Transaction WHERE appName='my-app-name'"
+                    },
+                    terms: {
+                    operator: ABOVE, priority: CRITICAL, threshold: 0, thresholdDuration: 60, thresholdOccurrences: ALL
+                    }
+                }
+      PolicyId: !Ref alertspolicyResource
+      Tags:
+        StationConditionKey: "Static Condition Value"
+
+  alertsmutingruleResource:
+    Type: 'NewRelic::Observability::AlertsMutingRule'
+    Properties:
+      Rule: >-
+        rule: {
+          name: "Test stack muting rule",
+          description: "Mute host-1 violations",
+          enabled: true,
+          condition: {
+            operator: AND,
+            conditions: [{
+              attribute: "tags.host",
+              operator: EQUALS,
+              values: ["host-1"]
+            }]
+          }
+        }
+
+  aiNotificationsDestinationResource:
+    Type: 'NewRelic::Observability::AINotificationsDestination'
+    Properties:
+      Destination: >-
+        destination: {name: "Notification email test", properties: {key: "email", value: "someone@nowhere.com"}, type: EMAIL}
+
+  aiNotificationsChannelResource:
+    Type: 'NewRelic::Observability::AINotificationsChannel'
+    Properties:
+      Channel: >-
+        channel: {
+        destinationId: "{{{DestinationId}}}", 
+        name: "CloudFormation Test Channel", 
+        product: IINT, 
+        properties: {key: "", value: "", displayValue: "CloudFormation Test Channel", label: ""}, 
+        type: EMAIL}
+      Variables:
+        DestinationId: !Ref aiNotificationsDestinationResource
+
+  aiWorkflowResource:
+    Type: 'NewRelic::Observability::AIWorkflows'
+    Properties:
+    Type: 'NewRelic::Observability::AIWorkflows'
+    Properties:
+      WorkflowData: >-
+        {
+          destinationConfigurations: { channelId: "{{{ChannelId}}}" }
+            mutingRulesHandling: DONT_NOTIFY_FULLY_MUTED_ISSUES
+            name: "Test stack- test workflow"
+            issuesFilter: {
+              name: "Test stack- test issuesFilter"
+                predicates: {
+                  attribute: "accumulations.tag.team"
+                    operator: CONTAINS
+                    values: "security"
+                }
+                type: FILTER
+            }
+        }
+      Variables:
+        ChannelId: !Ref aiNotificationsChannelResource

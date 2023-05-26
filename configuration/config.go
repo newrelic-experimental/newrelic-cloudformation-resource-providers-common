@@ -19,6 +19,7 @@ type Config struct {
    Endpoint  *string `json:",omitempty"`
    AccountID *string `json:",omitempty"`
    APIKey    *string `json:",omitempty"`
+   TypeName  *string `json:",omitempty"`
 }
 
 func (c *Config) GetEndpoint() string {
@@ -28,11 +29,21 @@ func (c *Config) GetEndpoint() string {
    return *c.Endpoint
 }
 
+func (c *Config) GetUserAgent() (s string) {
+   if c.TypeName == nil {
+      log.Warnf("GetUserAgent: nil TypeName")
+      return "AWS CloudFormation/   NewRelic::Observability::UnknownResource"
+   }
+   return "AWS CloudFormation/   " + *c.TypeName
+
+}
+
 // FUTURE try reading typeName from .rpdk-configuration. For now it's up to the API implementor to provide it.
 
 func NewConfiguration(s *session.Session, typeName *string) *Config {
    // 2. If we find a TypeConfiguration envvar AND the file exists use it and return
    c := &Config{}
+   c.TypeName = typeName
    if c.configurationFromFile() {
       log.Debugf("SetConfiguration: using file")
       return c
@@ -119,6 +130,7 @@ func (c *Config) configurationFromCloudFormation(s *session.Session, typeName *s
    }
    bdtci.SetTypeConfigurationIdentifiers(tcia)
    o, err := svc.BatchDescribeTypeConfigurations(&bdtci)
+   // TODO Use svc.DescribeType() to get our version number for the User-Agent string
    logging.Dump(log.DebugLevel, o, "SetConfiguration: o")
 
    if err != nil {

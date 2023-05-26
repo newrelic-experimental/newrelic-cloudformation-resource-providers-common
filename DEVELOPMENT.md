@@ -3,10 +3,14 @@
 - [CFN CLI](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-cli.html)
 - [Registering an extension privately (step 1)](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-register.html)
 - [Publishing an extension publicly (step 2)](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html)
+- [Taggable entities](https://github.com/newrelic/entity-definitions/tree/main/definitions)
+- 
 ## Troubleshooting
 - Error log
 - `Debug` log level for mustache substitution
 - Validate mutation using the [Explorer](https://api.newrelic.com/graphiql)
+- Moustache variables used in `inputs/` `json` files must be [jinja2 escaped](https://jinja.palletsprojects.com/en/3.0.x/templates/#escaping) or the tests will fail.
+- All attributes used in stack `Outputs` must be returned by `Read`
 
 ## Building
 - Install Docker

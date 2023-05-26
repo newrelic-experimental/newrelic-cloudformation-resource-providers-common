@@ -20,6 +20,24 @@ type Payload struct {
    // preReadTags []TagObject
 }
 
+func (p *Payload) SetIdentifier(g *string) {
+   // TODO implement me
+   panic("implement me")
+}
+
+func (p *Payload) GetIdentifier() *string {
+   return p.model.Guid
+}
+
+func (p *Payload) GetTagIdentifier() *string {
+   return p.model.Guid
+}
+
+func (p *Payload) GetIdentifierKey(a model.Action) string {
+   // We don't get a guid/id back from tag api's
+   return ""
+}
+
 func (p *Payload) HasTags() bool {
    return p.model.Tags != nil
 }
@@ -134,7 +152,7 @@ func (p *Payload) GetGraphQLFragment() *string {
 
 func (p *Payload) SetGuid(g *string) {
    p.model.Guid = g
-   log.Debugf("SetGuid: %s", *p.model.Guid)
+   log.Debugf("SetIdentifier: %s", *p.model.Guid)
 }
 
 func (p *Payload) GetGuid() *string {

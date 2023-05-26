@@ -35,26 +35,15 @@ func (i *nerdgraph) Delete(m model.Model) (err error) {
 
    start := time.Now()
    body, err := i.emit(mutation, *i.config.APIKey, i.config.GetEndpoint())
-   _ = body
    if err != nil {
       return
    }
 
-   key := m.GetResultKey(model.Delete)
-   if key != "" {
-      var v interface{}
-      v, err = FindKeyValue(body, key)
-      if err != nil {
-         log.Errorf("error finding result key: %s in response: %s", key, string(body))
-         return
-      }
-
-      if v == nil {
-         log.Errorf("Delete: result not returned by NerdGraph operation")
-         err = fmt.Errorf("%w Delete: result not returned by NerdGraph operation", &cferror.InvalidRequest{})
-         return
-      }
+   err = i.resultHandler.Delete(m, body)
+   if err != nil {
+      return
    }
+
    // Allow for the NRDB propagation delay by doing a spin Read
    // FUTURE add some sort of timeout interrupt (channel?)
    // Call Read until it returns an arror, hopefully NotFound

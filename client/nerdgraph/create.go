@@ -36,16 +36,9 @@ func (i *nerdgraph) Create(m model.Model) (err error) {
       return err
    }
 
-   key := m.GetResultKey(model.Create)
-   if key != "" {
-      var v interface{}
-      v, err = FindKeyValue(body, key)
-      if err != nil {
-         log.Errorf("Create: error finding result key: %s in response: %s", key, string(body))
-         return err
-      }
-      s := fmt.Sprintf("%v", v)
-      m.SetGuid(&s)
+   err = i.resultHandler.Create(m, body)
+   if err != nil {
+      return err
    }
 
    // Allow for the NRDB propagation delay by doing a spin Read
