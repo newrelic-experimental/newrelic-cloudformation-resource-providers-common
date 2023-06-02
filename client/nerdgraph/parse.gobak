@@ -3,7 +3,7 @@ package nerdgraph
 import (
    "encoding/json"
    "fmt"
-   "github.com/newrelic/newrelic-cloudformation-resource-providers-common/cferror"
+   "github.com/newrelic-experimental/newrelic-cloudformation-resource-providers-common/cferror"
    log "github.com/sirupsen/logrus"
 )
 
