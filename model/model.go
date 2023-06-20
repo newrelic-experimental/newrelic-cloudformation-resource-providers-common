@@ -46,4 +46,5 @@ type Model interface {
    HasTags() bool
    GetTags() map[string]string
    GetTagIdentifier() *string
+   GetTypeName() string
 }

@@ -45,6 +45,11 @@ func (p *Payload) HasTags() bool {
 func (p *Payload) GetTags() map[string]string {
    return make(map[string]string)
 }
+
+func (p *Payload) GetTypeName() string {
+   return TypeName
+}
+
 func NewPayload(m *Model) (p *Payload) {
    // // Should only be true on Create
    // if m.Guid == nil {

@@ -76,8 +76,10 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
+            tags.TypeName = model.GetTypeName()
             tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
+
             // c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm), tags.NewResultHandler())
             c := NewGraphqlClient(i.req, &tags.TypeName, tags.NewErrorHandler(sm), tags.NewResultHandler())
 
@@ -224,6 +226,7 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
+            tags.TypeName = model.GetTypeName()
             tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
             // c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm), tags.NewResultHandler())
