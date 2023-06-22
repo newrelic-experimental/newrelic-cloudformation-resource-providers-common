@@ -75,6 +75,15 @@ A `Create` operation uses the `taggingAddTagsToEntity` mutation, an `Update` ope
 
 ***IMPORTANT NOTE***: An `Update` operation _completely_ overwrites all previous tags on the entity.
 
+## Environment Variables
+### LOG_LEVEL (case insensitive, least to most verbose)
+	"panic":
+	"fatal":
+	"error":
+	"warn", "warning":
+	"info":
+	"debug":
+	"trace":
 ## Moustache
 All text substitution is done using a [Go implementation](https://github.com/cbroglie/mustache) of the [Moustache specification](https://github.com/mustache/spec)`. [The manual is here](http://mustache.github.io/mustache.5.html), in
 general all you need to know is use triple curly braces.

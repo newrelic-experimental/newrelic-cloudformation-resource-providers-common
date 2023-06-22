@@ -28,8 +28,9 @@ type IClient interface {
 }
 
 type GraphqlClient struct {
-   client IClient
-   req    handler.Request
+   client   IClient
+   req      handler.Request
+   typeName *string
 }
 
 func NewGraphqlClient(req handler.Request, typeName *string, errorHandler model.ErrorHandler, resultHandler model.ResultHandler) *GraphqlClient {
@@ -44,8 +45,9 @@ func NewGraphqlClient(req handler.Request, typeName *string, errorHandler model.
    // return graphqlClient
    return &GraphqlClient{
       // client: nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), model, errorHandler, resultHandler),
-      client: nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), errorHandler, resultHandler),
-      req:    req}
+      client:   nerdgraph.NewClient(configuration.NewConfiguration(req.Session, typeName), errorHandler, resultHandler),
+      req:      req,
+      typeName: typeName}
 }
 
 func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.ProgressEvent, err error) {
@@ -76,7 +78,7 @@ func (i *GraphqlClient) CreateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
-            tags.TypeName = model.GetTypeName()
+            tags.TypeName = *i.typeName
             tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
 
@@ -226,7 +228,7 @@ func (i *GraphqlClient) UpdateMutation(model model.Model) (event handler.Progres
          setEvent(i.req, event, err)
          // Run tagging in a goroutine. Because this is running inside a Lambda wrapper provided by the go plugin there's no worry of the "main" exiting- it's async all the way down.
          go func() {
-            tags.TypeName = model.GetTypeName()
+            tags.TypeName = *i.typeName
             tagModel := tags.NewTagModel(model.GetTagIdentifier(), model.GetTags(), model.GetVariables())
             sm := tags.NewPayload(tagModel)
             // c := NewGraphqlClient(i.req, &tags.TypeName, sm, tags.NewErrorHandler(sm), tags.NewResultHandler())

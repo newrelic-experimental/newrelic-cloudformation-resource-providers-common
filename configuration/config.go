@@ -20,6 +20,7 @@ type Config struct {
    AccountID *string `json:",omitempty"`
    APIKey    *string `json:",omitempty"`
    TypeName  *string `json:",omitempty"`
+   LogLevel  *string `json:",omitempty"`
 }
 
 func (c *Config) GetEndpoint() string {
@@ -40,9 +41,12 @@ func (c *Config) GetUserAgent() (s string) {
 
 // FUTURE try reading typeName from .rpdk-configuration. For now it's up to the API implementor to provide it.
 
-func NewConfiguration(s *session.Session, typeName *string) *Config {
+func NewConfiguration(s *session.Session, typeName *string) (c *Config) {
    // 2. If we find a TypeConfiguration envvar AND the file exists use it and return
-   c := &Config{}
+   defer func() {
+      logging.SetLogLevel(*c.LogLevel)
+   }()
+   c = &Config{}
    c.TypeName = typeName
    if c.configurationFromFile() {
       log.Debugf("SetConfiguration: using file")
@@ -73,6 +77,13 @@ func (c *Config) setConfiguration(jsonConfig *string) {
       panic("error unmarshalling typeconfiguration: " + err.Error())
    }
 
+   if tc.LogLevel == nil {
+      c.LogLevel = &logging.DefaultLogLevel
+   } else {
+      c.LogLevel = tc.LogLevel
+   }
+   log.Printf("config.setConfiguration: LogLevel: %s", *c.LogLevel)
+
    if tc.APIKey == nil {
       panic("nil APIKey, typeOutput: " + *jsonConfig)
    } else {
@@ -82,6 +93,7 @@ func (c *Config) setConfiguration(jsonConfig *string) {
 
    if tc.Endpoint == nil {
       log.Warnf("no configured Endpoint, using US default")
+      c.Endpoint = &usEndpoint
    } else {
       c.Endpoint = tc.Endpoint
    }
