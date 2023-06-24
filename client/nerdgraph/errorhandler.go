@@ -74,7 +74,7 @@ func HasErrors(e model.ErrorHandler, data *[]byte) (err error) {
 func (e *CommonErrorHandler) TypeSpecificError(data *[]byte, s string) (err error) {
    log.Debugf("TypeSpecificError: %p enter", e)
    defer func() {
-      log.Debugf("TypeSpecificError: %p returning %v", e, err)
+      log.Debugf("TypeSpecificError: %p exit, returning: %v", e, err)
    }()
    v, err := FindKeyValue(*data, "errors")
    log.Debugf("TypeSpecificError: found: %v %T", v, v)
@@ -89,14 +89,18 @@ func (e *CommonErrorHandler) TypeSpecificError(data *[]byte, s string) (err erro
    e.GetErrorMap(v, errorMap)
 
    if errorMap == nil {
-      log.Warnf("Empty errors array: %v+ %T", e, e)
+      log.Warnf("TypeSpecificError: Empty errors map: %v+ %T", e, e)
+      err = fmt.Errorf("%w errorMap is nil: %v", &cferror.UnknownError{}, v)
       return
    }
+   log.Debugf("TypeSpecificError: errorMap: %v", errorMap)
    _type := fmt.Sprintf("%v", errorMap[e.M.GetErrorKey()])
    if strings.Contains(strings.ToLower(_type), "not_found") || strings.Contains(strings.ToLower(_type), "not found") {
       err = fmt.Errorf("%w Not found", &cferror.NotFound{})
       return
    }
+   // At this point we have some non-specific error
+   err = fmt.Errorf("%w Unrecognized error: %v", &cferror.UnknownError{}, errorMap)
    return
 }
 
