@@ -7,6 +7,7 @@ import (
    "github.com/newrelic/newrelic-cloudformation-resource-providers-common/logging"
    "github.com/newrelic/newrelic-cloudformation-resource-providers-common/model"
    log "github.com/sirupsen/logrus"
+   "regexp"
    "strings"
 )
 
@@ -43,6 +44,8 @@ type CommonErrorHandler struct {
    M model.Model
 }
 
+var whitespace, _ = regexp.Compile("s+")
+
 // HasErrors can't be a method on ErrorHandler due to the way Go handles (or doesn't) dispatch- no v-table :-(
 func HasErrors(e model.ErrorHandler, data *[]byte) (err error) {
    log.Debugf("HasErrors: %p enter", e)
@@ -57,6 +60,11 @@ func HasErrors(e model.ErrorHandler, data *[]byte) (err error) {
    // No error keyword
    s := string(*data)
    if !(strings.Contains(strings.ToLower(s), `"error":`) || strings.Contains(strings.ToLower(s), `"errors":`)) {
+      return
+   }
+
+   // Handle an empty errors[] as ok
+   if strings.Contains(whitespace.ReplaceAllString(strings.ToLower(s), ""), `"error":[]`) || strings.Contains(whitespace.ReplaceAllString(strings.ToLower(s), ""), `"errors":[]`) {
       return
    }
 
