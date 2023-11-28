@@ -44,7 +44,11 @@ func (c *Config) GetUserAgent() (s string) {
 func NewConfiguration(s *session.Session, typeName *string) (c *Config) {
    // 2. If we find a TypeConfiguration envvar AND the file exists use it and return
    defer func() {
-      logging.SetLogLevel(*c.LogLevel)
+      if c != nil {
+         logging.SetLogLevel(*c.LogLevel)
+      } else {
+         logging.SetLogLevel("debug")
+      }
    }()
    c = &Config{}
    c.TypeName = typeName
